@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 _WORKER_ROOT = Path(__file__).resolve().parent.parent
+_APPLICATION_SRC_ROOT = (_WORKER_ROOT.parent / "src").resolve()
 
 
 def _isolate_worker_import_path() -> None:
@@ -17,10 +18,10 @@ def _isolate_worker_import_path() -> None:
         if not entry:
             clean_path.append(entry)
             continue
-        resolved = Path(entry).resolve().as_posix()
+        resolved = Path(entry).resolve()
         if (
-            resolved.endswith("/saferefundagent/src")
-            or "/saferefundagent/src/" in resolved
+            resolved == _APPLICATION_SRC_ROOT
+            or _APPLICATION_SRC_ROOT in resolved.parents
         ):
             continue
         clean_path.append(entry)
