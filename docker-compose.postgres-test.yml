@@ -1,0 +1,19 @@
+# Disposable PostgreSQL for local and CI concurrency evidence (C07).
+# Pin the image tag; tests assert behaviour only against this major.minor line.
+# Scope teardown with COMPOSE_PROJECT_NAME (see Makefile POSTGRES_COMPOSE_PROJECT).
+services:
+  saferefund-postgres-test:
+    image: postgres:16.4-alpine
+    environment:
+      POSTGRES_USER: saferefund
+      POSTGRES_PASSWORD: saferefund
+      POSTGRES_DB: saferefund_test
+    ports:
+      - "54329:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U saferefund -d saferefund_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+    tmpfs:
+      - /var/lib/postgresql/data

@@ -1,0 +1,102 @@
+[importlinter]
+root_package = saferefund
+
+[importlinter:contract:policy_does_not_know_boundaries]
+name = Policy does not know application boundaries
+type = forbidden
+source_modules = saferefund.policy
+forbidden_modules =
+    saferefund.adapters
+    saferefund.gate
+    saferefund.agent
+    saferefund.api
+
+[importlinter:contract:adapters_contain_no_checks]
+name = Adapters contain no policy or orchestration
+type = forbidden
+source_modules = saferefund.adapters
+forbidden_modules =
+    saferefund.policy
+    saferefund.gate
+    saferefund.agent
+
+[importlinter:contract:adapter_mediation]
+name = Only gate imports adapters for side effects
+type = forbidden
+# Package-root source overlaps forbidden adapters; future modules may stay green here.
+# tests/invariants/adapter_import_scanner.py is the exhaustive future-module proof.
+source_modules =
+    saferefund
+forbidden_modules =
+    saferefund.adapters
+ignore_imports =
+    saferefund.demo -> saferefund.adapters
+    saferefund.demo -> saferefund.adapters.mailer
+allow_indirect_imports = true
+
+[importlinter:contract:projections_are_pure]
+name = Projections import only domain and standard library
+type = forbidden
+source_modules = saferefund.projections
+forbidden_modules =
+    saferefund.api
+    saferefund.agent
+    saferefund.gate
+    saferefund.policy
+    saferefund.repositories
+    saferefund.adapters
+    saferefund.actions
+
+[importlinter:contract:layered_architecture]
+name = Layered dependency direction
+type = layers
+layers =
+    saferefund.api
+    saferefund.agent
+    saferefund.gate
+    saferefund.policy
+    saferefund.projections
+    saferefund.repositories | saferefund.actions | saferefund.adapters
+    saferefund.db
+    saferefund.clock | saferefund.config | saferefund.ids | saferefund.domain
+
+[importlinter:contract:gate_internals_are_private]
+name = Untrusted layers reach the gate only through its façade
+type = forbidden
+source_modules =
+    saferefund.api
+    saferefund.agent
+forbidden_modules =
+    saferefund.gate.common
+    saferefund.gate.effects
+    saferefund.gate.refund
+    saferefund.gate.operator
+    saferefund.gate.verification
+allow_indirect_imports = true
+
+[importlinter:contract:gate_internals_are_private_to_gate]
+name = No module outside gate imports gate internals
+type = forbidden
+source_modules =
+    saferefund.api
+    saferefund.agent
+    saferefund.policy
+    saferefund.projections
+    saferefund.repositories
+    saferefund.actions
+    saferefund.domain
+    saferefund.adapters
+    saferefund.db
+    saferefund.clock
+    saferefund.config
+    saferefund.ids
+    saferefund.main
+    saferefund.demo
+    saferefund.demo_tables
+forbidden_modules =
+    saferefund.gate.common
+    saferefund.gate.effects
+    saferefund.gate.refund
+    saferefund.gate.operator
+    saferefund.gate.verification
+allow_indirect_imports = true

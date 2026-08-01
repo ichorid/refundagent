@@ -1,0 +1,73 @@
+[project]
+name = "saferefund"
+version = "0.1.0"
+description = "A deterministic enforcement boundary for an untrusted refund agent."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "aiosqlite>=0.21",
+    "fastapi>=0.116",
+    "pydantic>=2.11",
+    "sqlalchemy>=2.0.43",
+    "uvicorn>=0.35",
+]
+
+[dependency-groups]
+dev = [
+    "asyncpg>=0.30",
+    "httpx>=0.28",
+    "import-linter>=2.3",
+    "mypy>=1.17",
+    "pytest>=8.4",
+    "pytest-asyncio>=1.1",
+    "ruff>=0.12",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+src = ["src", "tests"]
+target-version = "py313"
+extend-exclude = ["docs", "plans"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D203",
+    "D213",
+    "COM812",
+    "ISC001",
+    "D100",
+    "D104",
+    "CPY001",
+    "S105",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "PLR2004", "D"]
+"worker/*" = ["E402", "T201", "PLR0911", "ANN401", "D"]
+"tests/unit/test_clock.py" = ["S101", "PLR2004", "D", "DTZ001"]
+# Review-correction proof tests import symbols that do not exist yet on purpose,
+# inside the test body, so a missing symbol fails one test instead of collection.
+"tests/invariants/*" = ["S101", "PLR2004", "D", "PLC0415", "TC003"]
+"tests/postgres/*" = ["S101", "PLR2004", "D", "PLC0415", "TC002", "TC003", "E501"]
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
+enable_error_code = [
+    "redundant-expr",
+    "possibly-undefined",
+    "truthy-bool",
+    "ignore-without-code",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "--ignore=tests/postgres"
+markers = [
+    "postgres: tests that require a disposable PostgreSQL service (see tests/postgres)",
+]

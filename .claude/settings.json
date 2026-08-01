@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/vader/MY_SRC/saferefundagent && OUTPUT=$(make check 2>&1); STATUS=$?; TAIL=$(printf '%s' \"$OUTPUT\" | tail -c 4000); MSG=$(printf 'make check exit=%s\\n%s' \"$STATUS\" \"$TAIL\"); jq -n --arg msg \"$MSG\" '{systemMessage: $msg}'",
+            "timeout": 300,
+            "statusMessage": "Running make check..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(printf '%s' \"$INPUT\" | jq -r '.tool_input.file_path // .tool_response.filePath // empty'); case \"$FILE\" in *tests/invariants/*|*docs/ARCHITECTURE.md|*docs/CLAIMS.md|*DEBT.md) cd /home/vader/MY_SRC/saferefundagent && OUT=$(uv run pytest tests/invariants -q 2>&1); ST=$?; TAIL=$(printf '%s' \"$OUT\" | tail -c 3000); MSG=$(printf 'invariants check exit=%s for %s\\n%s' \"$ST\" \"$FILE\" \"$TAIL\"); jq -n --arg msg \"$MSG\" '{systemMessage: $msg}' ;; *) exit 0 ;; esac",
+            "timeout": 60,
+            "statusMessage": "Claim/invariant file changed — running tests/invariants..."
+          }
+        ]
+      }
+    ]
+  }
+}

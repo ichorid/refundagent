@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run quality gate
+        run: make check
+
+  postgres-concurrency:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16.4-alpine
+        env:
+          POSTGRES_USER: saferefund
+          POSTGRES_PASSWORD: saferefund
+          POSTGRES_DB: saferefund_test
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U saferefund -d saferefund_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Detect PostgreSQL-relevant changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            postgres:
+              - 'src/saferefund/policy/**'
+              - 'src/saferefund/gate/**'
+              - 'src/saferefund/repositories/**'
+              - 'src/saferefund/domain/**'
+              - 'src/saferefund/projections/**'
+              - 'tests/postgres/**'
+              - 'docker-compose.postgres-test.yml'
+              - '.github/workflows/ci.yml'
+              - 'Makefile'
+              - 'pyproject.toml'
+
+      - name: Install uv
+        if: steps.changes.outputs.postgres == 'true'
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        if: steps.changes.outputs.postgres == 'true'
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        if: steps.changes.outputs.postgres == 'true'
+        run: uv sync
+
+      - name: Run PostgreSQL concurrency suite
+        if: steps.changes.outputs.postgres == 'true'
+        env:
+          SAFEREFUND_TEST_POSTGRES_URL: postgresql+asyncpg://saferefund:saferefund@localhost:54329/saferefund_test
+        run: uv run pytest tests/postgres -q
