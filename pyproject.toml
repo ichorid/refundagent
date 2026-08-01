@@ -1,0 +1,40 @@
+[project]
+name = "saferefund"
+version = "0.1.0"
+description = "A deterministic enforcement boundary for an untrusted refund agent."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.116",
+    "pydantic>=2.11",
+    "sqlalchemy>=2.0.43",
+    "uvicorn>=0.35",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28",
+    "mypy>=1.17",
+    "pytest>=8.4",
+    "ruff>=0.12",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+src = ["src", "tests"]
+target-version = "py313"
+extend-exclude = ["docs", "plans"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "D"]
+ignore = ["D203", "D213", "D100", "D104"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
